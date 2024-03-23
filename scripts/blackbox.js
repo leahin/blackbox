@@ -56,6 +56,80 @@ class Blackbox {
 const blackbox = new Blackbox(8, 4, 25);
 blackbox.initiateBoard();
 
+class Ray {
+  constructor(entryPoint, board) {
+    this._entryPoint = entryPoint;
+    this._board = board;
+    this._size = board.length;
+    this.directions = {
+      toTop: [-1, 0],
+      toBottom: [1, 0],
+      toLeft: [0, -1],
+      toRight: [0, 1],
+    };
+  }
+
+  getInitialDirection() {
+    if (this._entryPoint[0] === 'top') {
+      return this.directions.toBottom;
+    } else if (this._entryPoint[0] === 'bottom') {
+      return this.directions.toTop;
+    } else if (this._entryPoint[1] === 'left') {
+      return this.directions.toRight;
+    } else {
+      return this.directions.toLeft;
+    }
+  }
+
+  checkAtomFront(row, col, dx, dy) {
+    if (this._board[row + dx][col + dy] === 1) {
+      return true;
+    }
+    return false;
+  }
+
+  checkAtomDiagonalLeft(row, col, dx, dy) {
+    if (dx !== 0 && col - 1 > 0 && this._board[row + dx][col - 1] === 1) {
+      return true;
+    } else if (
+      dy !== 0 &&
+      row - 1 > 0 &&
+      this._board[row - 1][col + dy] === 1
+    ) {
+      return true;
+    }
+    return false;
+  }
+
+  checkAtomDiagonalRight(row, col, dx, dy) {
+    if (
+      dx !== 0 &&
+      col + 1 < this._board &&
+      this._board[row + dx][col + 1] === 1
+    ) {
+      return true;
+    } else if (
+      dy !== 0 &&
+      row + 1 < this._board &&
+      this._board[row + 1][col + dy] === 1
+    ) {
+      return true;
+    }
+    return false;
+  }
+
+  moveRay() {
+    let [row, col] = this._entryPoint;
+    let [dx, dy] = this.getInitialDirection(row, col);
+    while (row >= 0 && row < this._size && col >= 0 && col < this._size) {
+      row += dx;
+      col += dy;
+      // check front for atom
+      // check diagonal for atom
+    }
+  }
+}
+
 // ray class
 // take start launch point and grid data from the black box
 // move ray
