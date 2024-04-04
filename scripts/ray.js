@@ -11,6 +11,29 @@ const directions = {
   toRight: [0, 1],
 };
 
+const directionMap = {
+  toTop: {
+    left: directions.toLeft,
+    right: directions.toRight,
+    back: directions.toBottom,
+  },
+  toBottom: {
+    left: directions.toRight,
+    right: directions.toLeft,
+    back: directions.toTop,
+  },
+  toLeft: {
+    left: directions.toBottom,
+    right: directions.toTop,
+    back: directions.toRight,
+  },
+  toRight: {
+    left: directions.toTop,
+    right: directions.toBottom,
+    back: directions.toLeft,
+  },
+};
+
 class Ray {
   constructor(entryPoint, board) {
     this._entryPoint = entryPoint;
@@ -20,6 +43,7 @@ class Ray {
     this._col = null;
     this._dx = null;
     this._dy = null;
+    this._directionMap = null;
 
     this.initiateRay();
   }
@@ -30,21 +54,25 @@ class Ray {
         this._row = -1;
         this._col = this._entryPoint[1];
         [this._dx, this._dy] = directions.toBottom;
+        this._directionMap = directionMap.toBottom;
         break;
       case "bottom":
         this._row = this._size;
         this._col = this._entryPoint[1];
         [this._dx, this._dy] = directions.toTop;
+        this._directionMap = directionMap.toTop;
         break;
       case "left":
         this._row = this._entryPoint[1];
         this._col = -1;
         [this._dx, this._dy] = directions.toRight;
+        this._directionMap = directionMap.toRight;
         break;
       case "right":
         this._row = this._entryPoint[1];
         this._col = this._size;
         [this._dx, this._dy] = directions.toLeft;
+        this._directionMap = directionMap.toLeft;
         break;
     }
   }
@@ -90,18 +118,22 @@ class Ray {
     return false;
   }
 
-  getNextDirection() {
+  setNextDirection() {
     let isAtomDiagonalLeft = this.checkAtomDiagonalLeft();
     let isAtomDiagonalRight = this.checkAtomDiagonalRight();
     if (isAtomDiagonalLeft && isAtomDiagonalRight) {
       // turn direction to 180 degree
-      return;
+      this._directionMap = [this._dx, this._dy] = this._directionMap.back;
+      return this._directionMap.back;
     } else if (isAtomDiagonalLeft) {
       // turn direction to 90 degree
+      [this._dx, this._dy] = this._directionMap.left;
     } else if (isAtomDiagonalRight) {
       // turn direction to -90 degree
+      [this._dx, this._dy] = this._directionMap.right;
     } else {
-      // keep moving in the same direction
+      this._row += this._dx;
+      this._col += this._dy;
     }
   }
 
@@ -119,7 +151,7 @@ class Ray {
       this._row += this._dx;
       this._col += this._dy;
     }
-    // return exit point
+    return [this._row, this._col];
   }
 }
 

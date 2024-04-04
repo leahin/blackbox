@@ -2,6 +2,7 @@
 // have grid data
 // passing start launch point
 // store end point on the grid
+import Ray from "./ray.js";
 
 function generateIndex() {
   return Math.floor(Math.random() * 8);
