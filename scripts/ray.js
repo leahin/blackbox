@@ -13,30 +13,31 @@ const directions = {
 
 const directionMap = {
   toTop: {
-    left: directions.toLeft,
-    right: directions.toRight,
-    back: directions.toBottom,
+    left: "toLeft",
+    right: "toRight",
+    back: "toBottom",
   },
   toBottom: {
-    left: directions.toRight,
-    right: directions.toLeft,
-    back: directions.toTop,
+    left: "toLeft",
+    right: "toRight",
+    back: "toTop",
   },
   toLeft: {
-    left: directions.toBottom,
-    right: directions.toTop,
-    back: directions.toRight,
+    left: "toTop",
+    right: "toBottom",
+    back: "toRight",
   },
   toRight: {
-    left: directions.toTop,
-    right: directions.toBottom,
-    back: directions.toLeft,
+    left: "toTop",
+    right: "toBottom",
+    back: "toLeft",
   },
 };
 
 class Ray {
-  constructor(entryPoint, board) {
-    this._entryPoint = entryPoint;
+  constructor(direction, index, board) {
+    this._entryDirection = direction;
+    this._entryIndex = Number(index);
     this._board = board;
     this._size = board.length;
     this._row = null;
@@ -44,32 +45,33 @@ class Ray {
     this._dx = null;
     this._dy = null;
     this._directionMap = null;
+    this._isDeflected = false;
 
     this.initiateRay();
   }
 
   initiateRay() {
-    switch (this._entryPoint[0]) {
+    switch (this._entryDirection) {
       case "top":
         this._row = -1;
-        this._col = this._entryPoint[1];
+        this._col = this._entryIndex;
         [this._dx, this._dy] = directions.toBottom;
         this._directionMap = directionMap.toBottom;
         break;
       case "bottom":
         this._row = this._size;
-        this._col = this._entryPoint[1];
+        this._col = this._entryIndex;
         [this._dx, this._dy] = directions.toTop;
         this._directionMap = directionMap.toTop;
         break;
       case "left":
-        this._row = this._entryPoint[1];
+        this._row = this._entryIndex;
         this._col = -1;
         [this._dx, this._dy] = directions.toRight;
         this._directionMap = directionMap.toRight;
         break;
       case "right":
-        this._row = this._entryPoint[1];
+        this._row = this._entryIndex;
         this._col = this._size;
         [this._dx, this._dy] = directions.toLeft;
         this._directionMap = directionMap.toLeft;
@@ -78,23 +80,37 @@ class Ray {
   }
 
   checkAtomFront() {
-    if (this._board[this._row + this._dx][this._col + this._dy] === 1) {
+    const row = this._row + this._dx;
+    const col = this._col + this._dy;
+    if (
+      row >= 0 &&
+      row < this._size &&
+      col >= 0 &&
+      col < this._size &&
+      this._board[row][col] === 1
+    ) {
       return true;
     }
     return false;
   }
 
   checkAtomDiagonalLeft() {
+    const row = this._row + this._dx;
+    const col = this._col + this._dy;
     if (
       this._dx !== 0 &&
-      this._col - 1 > 0 &&
-      this._board[this._row + this._dx][this._col - 1] === 1
+      row >= 0 &&
+      row < this._size &&
+      this._col - 1 >= 0 &&
+      this._board[row][this._col - 1] === 1
     ) {
       return true;
     } else if (
       this._dy !== 0 &&
-      this._row - 1 > 0 &&
-      this._board[this._row - 1][this._col + this._dy] === 1
+      col >= 0 &&
+      col < this._size &&
+      this._row - 1 >= 0 &&
+      this._board[this._row - 1][col] === 1
     ) {
       return true;
     }
@@ -102,16 +118,22 @@ class Ray {
   }
 
   checkAtomDiagonalRight() {
+    const row = this._row + this._dx;
+    const col = this._col + this._dy;
     if (
       this._dx !== 0 &&
-      this._col + 1 < this._board &&
-      this._board[this._row + this._dx][this._col + 1] === 1
+      row >= 0 &&
+      row < this._size &&
+      this._col + 1 < this._size &&
+      this._board[row][this._col + 1] === 1
     ) {
       return true;
     } else if (
       this._dy !== 0 &&
-      this._row + 1 < this._board &&
-      this._board[this._row + 1][this._col + this._dy] === 1
+      col >= 0 &&
+      col < this._size &&
+      this._row + 1 < this._size &&
+      this._board[this._row + 1][col] === 1
     ) {
       return true;
     }
@@ -121,37 +143,88 @@ class Ray {
   setNextDirection() {
     let isAtomDiagonalLeft = this.checkAtomDiagonalLeft();
     let isAtomDiagonalRight = this.checkAtomDiagonalRight();
+    let newDirection = null;
     if (isAtomDiagonalLeft && isAtomDiagonalRight) {
-      // turn direction to 180 degree
-      this._directionMap = [this._dx, this._dy] = this._directionMap.back;
-      return this._directionMap.back;
+      newDirection = this._directionMap.back;
     } else if (isAtomDiagonalLeft) {
-      // turn direction to 90 degree
-      [this._dx, this._dy] = this._directionMap.left;
+      newDirection = this._directionMap.right;
     } else if (isAtomDiagonalRight) {
-      // turn direction to -90 degree
-      [this._dx, this._dy] = this._directionMap.right;
+      newDirection = this._directionMap.left;
     } else {
-      this._row += this._dx;
-      this._col += this._dy;
+      return;
     }
+    this._isDeflected = true;
+    this._directionMap = directionMap[newDirection];
+    [this._dx, this._dy] = directions[newDirection];
   }
 
   moveRay() {
+    // initial checkup
+    if (this.checkAtomFront()) {
+      return ["hit", this._entryDirection, this._entryIndex];
+    }
+    if (this.checkAtomDiagonalLeft() || this.checkAtomDiagonalRight()) {
+      return ["reflect", this._entryDirection, this._entryIndex];
+    }
+    this._row += this._dx;
+    this._col += this._dy;
+
+    // for testing
+    let cell = document.querySelector(
+      `.cell[row="${this._row}"][col="${this._col}"]`
+    );
+    if (cell) {
+      cell.style.backgroundColor = "green";
+    }
+
     while (
-      this._row >= -1 &&
-      this._row <= this._size &&
-      this._col >= -1 &&
-      this._col <= this._size
+      this._row >= 0 &&
+      this._row < this._size &&
+      this._col >= 0 &&
+      this._col < this._size
     ) {
       if (this.checkAtomFront()) {
-        return "hit";
+        return ["hit", this._entryDirection, this._entryIndex];
       }
-      [this._dx, this._dy] = this.getNextDirection();
+      this.setNextDirection();
       this._row += this._dx;
       this._col += this._dy;
+
+      // for testing
+      let cell = document.querySelector(
+        `.cell[row="${this._row}"][col="${this._col}"]`
+      );
+      if (cell) {
+        cell.style.backgroundColor = "green";
+      }
     }
-    return [this._row, this._col];
+
+    let direction = null;
+    let exitIndex = null;
+    if (this._row === -1) {
+      direction = "top";
+      exitIndex = this._col;
+    } else if (this._row === this._size) {
+      direction = "bottom";
+      exitIndex = this._col;
+    } else if (this._col === -1) {
+      direction = "left";
+      exitIndex = this._row;
+    } else {
+      direction = "right";
+      exitIndex = this._row;
+    }
+
+    if (
+      direction === this._entryDirection &&
+      (this._col === this._entryIndex || this._row === this._entryIndex)
+    ) {
+      return ["reflect", direction, exitIndex];
+    } else if (this._isDeflected) {
+      return ["deflect", direction, exitIndex];
+    } else {
+      return ["miss", direction, exitIndex];
+    }
   }
 }
 

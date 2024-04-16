@@ -34,7 +34,7 @@ h1 {
   background-color: #bbb;
 }
 
-[id*='launch-point-row'] {
+[id*="launch-point-row"] {
   display: flex;
 }
 
@@ -51,6 +51,12 @@ h1 {
 
 .launch-point:hover {
   background-color: #555;
+  cursor: pointer;
+}
+
+.cell:hover {
+  background-color: #ddd;
+  cursor: pointer;
 }
 
 #controls {

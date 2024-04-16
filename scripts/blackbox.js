@@ -16,12 +16,14 @@ class Blackbox {
     this._board = null;
     this._atomCoords = null;
     this._currentEntryPoint = null;
+    this.initiateBoard();
   }
 
   initiateBoard() {
     this._board = Array.from({ length: this._size }, () =>
       new Array(this._size).fill(0)
     );
+    this.generateAtomCoordinates();
     this.placeAtoms();
     console.log([...this._board]);
   }
@@ -34,16 +36,27 @@ class Blackbox {
       atoms.add(`${row}, ${col}`);
     }
     console.log(atoms);
-    return atoms;
+    this._atomCoords = atoms;
   }
 
   placeAtoms() {
-    const atoms = this.generateAtomCoordinates();
-    atoms.forEach((coord) => {
-      const [row, col] = coord.split(",");
+    this._atomCoords.forEach((coord) => {
+      const [row, col] = coord.split(", ");
       this._board[Number(row)][Number(col)] = 1;
+
+      // for testing
+      let cell = document.querySelector(`.cell[row="${row}"][col="${col}"]`);
+      cell.style.backgroundColor = "red";
     });
   }
+
+  shootRay(direction, index) {
+    console.log(`shootRay from ${direction} at ${index}`);
+    const ray = new Ray(direction, index, this._board);
+    const endPoint = ray.moveRay();
+    console.log(endPoint);
+  }
+
   // class close bracket
 }
 
