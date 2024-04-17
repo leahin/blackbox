@@ -94,6 +94,17 @@ h1 {
   font-size: 30px;
   text-align: center;
 }
+.correct-guess-text {
+  color: yellow;
+  font-size: 30px;
+  text-align: center;
+}
+
+.wrong-guess-text {
+  color: purple;
+  font-size: 30px;
+  text-align: center;
+}
 
 /* Result Texts */
 .hit-text {

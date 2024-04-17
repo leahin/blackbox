@@ -44,6 +44,7 @@ class Blackbox {
   }
 
   shootRay(direction, row, col) {
+    // Shoot a ray from the launch point
     const ray = new Ray(direction, row, col, this._board);
     const result = ray.moveRay();
     if (result[0] === "deflect") {
@@ -53,6 +54,16 @@ class Blackbox {
     }
     this._score--;
     return result;
+  }
+
+  guessAtom(row, col) {
+    // Guess the atom at the given coordinates
+    if (this._board[row][col] === 1) {
+      this._score += 5;
+      return true;
+    }
+    this._score -= 5;
+    return false;
   }
 
   reset() {

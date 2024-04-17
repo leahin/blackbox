@@ -26,7 +26,6 @@ const renderResult = (entryPoint, result, exitRow, exitCol) => {
   const exitPoint = document.querySelector(
     `.launch-point[row="${exitRow}"][col="${exitCol}"]`
   );
-  console.log(exitRow, exitCol);
   const spanElement = document.createElement("span");
   switch (result) {
     case "hit":
@@ -93,6 +92,31 @@ const onClickShow = (e) => {
   }
 };
 
+const onClickCell = (e) => {
+  let cell = e.target;
+  if (e.target.className != "cell") {
+    cell = e.target.parentElement;
+  }
+  const row = cell.getAttribute("row");
+  const col = cell.getAttribute("col");
+  const isAtom = blackbox.guessAtom(row, col);
+  const spanElement = document.createElement("span");
+  if (isAtom) {
+    const atomTextSpan = cell.querySelector(".atom-text");
+    if (atomTextSpan) {
+      cell.removeChild(atomTextSpan);
+    }
+    spanElement.className = "correct-guess-text";
+    spanElement.textContent = "O";
+  } else {
+    spanElement.className = "wrong-guess-text";
+    spanElement.textContent = "X";
+  }
+  cell.appendChild(spanElement);
+  renderScore();
+  cell.removeEventListener("click", onClickCell);
+};
+
 const resetBoard = () => {
   // Reset the rendered board for reset and new game.
   hideRay(DEBUG_MODE);
@@ -100,6 +124,7 @@ const resetBoard = () => {
   hideAtomText();
   hideResultText();
   addEventListenerToLanchPoints();
+  addEventListenerToCells();
 };
 
 const renderScore = () => {
@@ -147,7 +172,15 @@ const addEventListenerToLanchPoints = () => {
     point.addEventListener("click", onClickLaunchPoint);
   });
 };
+const addEventListenerToCells = () => {
+  // Add event listeners to cells
+  const cells = document.querySelectorAll(".cell");
+  cells.forEach((cell) => {
+    cell.addEventListener("click", onClickCell);
+  });
+};
 addEventListenerToLanchPoints();
+addEventListenerToCells();
 
 const newButton = document.getElementById("new-btn");
 newButton.addEventListener("click", onClickNew);
@@ -168,18 +201,3 @@ const hideRay = (debugMode) => {
     cell.style.backgroundColor = "#bbb";
   });
 };
-
-const addEventListenerToCells = (debugMode) => {
-  // Display cell clicked on console.
-  if (!debugMode) {
-    return;
-  }
-  const cells = document.querySelectorAll(".cell");
-  cells.forEach((cell) => {
-    cell.addEventListener("click", (e) => {
-      console.log(e.target);
-    });
-  });
-};
-
-addEventListenerToCells(DEBUG_MODE);
