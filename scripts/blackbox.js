@@ -4,18 +4,16 @@
 // store end point on the grid
 import Ray from "./ray.js";
 
-function generateIndex() {
-  return Math.floor(Math.random() * 8);
-}
-
 class Blackbox {
   constructor(size, numAtoms, score) {
     this._size = size;
     this._numAtoms = numAtoms;
+    this._initialScore = score;
     this._score = score;
     this._board = null;
-    this._atomCoords = null;
-    this._currentEntryPoint = null;
+    this._atoms = null;
+    this._deflectionCount = 0;
+    this._missCount = 0;
     this.initiateBoard();
   }
 
@@ -23,44 +21,60 @@ class Blackbox {
     this._board = Array.from({ length: this._size }, () =>
       new Array(this._size).fill(0)
     );
-    this.generateAtomCoordinates();
+    this.generateAtoms();
     this.placeAtoms();
-    console.log([...this._board]);
   }
 
-  generateAtomCoordinates() {
+  generateAtoms() {
+    // Randomly generate atom coordinates
     const atoms = new Set();
     while (atoms.size < this._numAtoms) {
-      let row = generateIndex();
-      let col = generateIndex();
-      atoms.add(`${row}, ${col}`);
+      let row = Math.floor(Math.random() * this._size);
+      let col = Math.floor(Math.random() * this._size);
+      atoms.add(`${row},${col}`); // to prevent duplicate atoms
     }
-    console.log(atoms);
-    this._atomCoords = atoms;
+    this._atoms = atoms;
   }
 
   placeAtoms() {
-    this._atomCoords.forEach((coord) => {
-      const [row, col] = coord.split(", ");
+    this._atoms.forEach((coord) => {
+      const [row, col] = coord.split(",");
       this._board[Number(row)][Number(col)] = 1;
-
-      // for testing
-      let cell = document.querySelector(`.cell[row="${row}"][col="${col}"]`);
-      cell.style.backgroundColor = "red";
     });
   }
 
-  shootRay(direction, index) {
-    console.log(`shootRay from ${direction} at ${index}`);
-    const ray = new Ray(direction, index, this._board);
-    const endPoint = ray.moveRay();
-    console.log(endPoint);
+  shootRay(direction, row, col) {
+    const ray = new Ray(direction, row, col, this._board);
+    const result = ray.moveRay();
+    if (result[0] === "deflect") {
+      this._deflectionCount++;
+    } else if (result[0] === "miss") {
+      this._missCount++;
+    }
+    this._score--;
+    return result;
   }
 
-  // class close bracket
-}
+  reset() {
+    this._score = this._initialScore;
+    this._deflectionCount = 0;
+    this._missCount = 0;
+  }
 
-// const blackbox = new Blackbox(8, 4, 25);
-// blackbox.initiateBoard();
+  get atoms() {
+    return this._atoms;
+  }
+
+  get score() {
+    return this._score;
+  }
+
+  get deflectionCount() {
+    return this._deflectionCount;
+  }
+  get missCount() {
+    return this._missCount;
+  }
+}
 
 export default Blackbox;
