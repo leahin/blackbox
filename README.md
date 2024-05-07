@@ -32,8 +32,19 @@ Addition to the game logic, the program allows the user to start a new game, res
 No Dependencies are required for the installation.
 
 ### Installing
-No Installing is required. It is a simple static webpage.
-Clone this repository and click on index.html to start the program, or click this [GitHub page](https://leahin.github.io/blackbox/).
+Simply click this [GitHub page](https://leahin.github.io/blackbox/).
+
+Or, to run locally.
+1. Clone this repository
+```
+git clone https://github.com/leahin/blackbox
+```
+2. Install any requirements
+```
+cd blackbox
+yarn install
+``` 
+3. Run index.html through a local server.
 
 ## License
 MIT License. For more information, see the license tab.
