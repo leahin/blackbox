@@ -1,126 +1,79 @@
-// trigger events for the game
+// Events for the game
+// Button events for new, reset, show, hide.
+// Add event listeners to the buttons, launch points and cells.
 
-import Blackbox from "./blackbox.js";
+import BlackboxModule from "./blackbox.js";
+import LaunchPointEvents from "./events/launchpoints.js";
+import CellEvents from "./events/cells.js";
 
-const SIZE = 8;
-const ATOM_NUM = 4;
-const SCORE = 25;
-const DEBUG_MODE = true;
-
-let blackbox = new Blackbox(SIZE, ATOM_NUM, SCORE);
-
-const onClickLaunchPoint = (e) => {
-  // LaunchPoint Div Element Event
-  // Shoot ray from the launch point
-  hideRay(DEBUG_MODE);
-  const direction = e.target.getAttribute("direction");
-  const row = e.target.getAttribute("row");
-  const col = e.target.getAttribute("col");
-  const [result, exitRow, exitCol] = blackbox.shootRay(direction, row, col);
-  renderResult(e.target, result, exitRow, exitCol);
-  renderScore();
-};
-
-const renderResult = (entryPoint, result, exitRow, exitCol) => {
-  // Render the result of the ray on the board
-  const exitPoint = document.querySelector(
-    `.launch-point[row="${exitRow}"][col="${exitCol}"]`
-  );
-  const spanElement = document.createElement("span");
-  switch (result) {
-    case "hit":
-      spanElement.className = "hit-text";
-      spanElement.textContent = "H";
-      exitPoint.appendChild(spanElement);
-      break;
-    case "reflect":
-      spanElement.className = "reflect-text";
-      spanElement.textContent = "R";
-      entryPoint.appendChild(spanElement);
-      break;
-    case "deflect":
-      spanElement.className = "deflect-text";
-      spanElement.textContent = "D" + blackbox.deflectionCount;
-      entryPoint.appendChild(spanElement.cloneNode(true));
-      exitPoint.appendChild(spanElement);
-      break;
-    case "miss":
-      spanElement.className = "miss-text";
-      spanElement.textContent = "M" + blackbox.missCount;
-      entryPoint.appendChild(spanElement.cloneNode(true));
-      exitPoint.appendChild(spanElement);
-      break;
-  }
-
-  // Remove event to not allow more rays from the same launch/exit points
-  entryPoint.removeEventListener("click", onClickLaunchPoint);
-  if (exitPoint) exitPoint.removeEventListener("click", onClickLaunchPoint);
-};
+const blackboxInstance = BlackboxModule();
 
 const onClickNew = (e) => {
-  // New button event
-  // Start a new blackbox game
+  // Start a new blackbox game.
   const confirmed = window.confirm(
     "Are you sure you want to start a new game?"
   );
   if (!confirmed) {
     return;
   }
-  blackbox = new Blackbox(SIZE, ATOM_NUM, SCORE);
+  blackboxInstance.resetInstance();
   resetBoard();
 };
 
 const onClickReset = (e) => {
-  // Reset button event
-  // Reset the current game
+  // Reset the current game.
   const confirmed = window.confirm("Are you sure you want to reset the game?");
   if (!confirmed) {
     return;
   }
+  const blackbox = blackboxInstance.getInstance();
   blackbox.reset();
   resetBoard();
 };
 
 const onClickShow = (e) => {
-  // Show button event
   // Show the atoms on the board
-  // TODO: handle atoms that are already discovered.
-  // TODO: hide button?
   const atomText = document.querySelector(".atom-text");
   if (!atomText) {
     showAtomText();
   }
+  e.target.textContent = "Hide";
+  e.target.addEventListener("click", onClickHide);
+  e.target.removeEventListener("click", onClickShow);
 };
 
-const onClickCell = (e) => {
-  let cell = e.target;
-  if (e.target.className != "cell") {
-    cell = e.target.parentElement;
-  }
-  const row = cell.getAttribute("row");
-  const col = cell.getAttribute("col");
-  const isAtom = blackbox.guessAtom(row, col);
-  const spanElement = document.createElement("span");
-  if (isAtom) {
-    const atomTextSpan = cell.querySelector(".atom-text");
-    if (atomTextSpan) {
-      cell.removeChild(atomTextSpan);
+const showAtomText = () => {
+  // Show the atoms on the board
+  const blackbox = blackboxInstance.getInstance();
+  const atoms = blackbox.atoms;
+  atoms.forEach((coord) => {
+    const [row, col] = coord.split(",");
+    const cell = document.querySelector(`.cell[row="${row}"][col="${col}"]`);
+    if (!cell.querySelector(".correct-guess-text")) {
+      const spanElement = document.createElement("span");
+      spanElement.className = "atom-text";
+      spanElement.textContent = "A";
+      cell.appendChild(spanElement);
     }
-    spanElement.className = "correct-guess-text";
-    spanElement.textContent = "O";
-  } else {
-    spanElement.className = "wrong-guess-text";
-    spanElement.textContent = "X";
-  }
-  cell.appendChild(spanElement);
-  renderScore();
-  cell.removeEventListener("click", onClickCell);
+  });
+};
+
+const onClickHide = (e) => {
+  // Hide the atoms on the board
+  const atomTextNodes = document.querySelectorAll(".atom-text");
+  atomTextNodes.forEach((node) => {
+    node.parentNode.removeChild(node);
+  });
+
+  e.target.textContent = "Show";
+  e.target.addEventListener("click", onClickShow);
+  e.target.removeEventListener("click", onClickHide);
 };
 
 const resetBoard = () => {
   // Reset the rendered board for reset and new game.
-  hideRay(DEBUG_MODE);
   renderScore();
+  resetShowButton();
   hideAtomText();
   hideResultText();
   addEventListenerToLanchPoints();
@@ -129,8 +82,19 @@ const resetBoard = () => {
 
 const renderScore = () => {
   // Render the current score on the page
+  const blackbox = blackboxInstance.getInstance();
   const scoreSpan = document.getElementById("current-score");
   scoreSpan.textContent = blackbox.score;
+};
+
+const resetShowButton = () => {
+  // Reset the show button if it is "Hide".
+  const showButton = document.getElementById("show-btn");
+  if (showButton.textContent === "Hide") {
+    showButton.textContent = "Show";
+    showButton.removeEventListener("click", onClickHide);
+    showButton.addEventListener("click", onClickShow);
+  }
 };
 
 const hideResultText = () => {
@@ -143,26 +107,70 @@ const hideResultText = () => {
   });
 };
 
-const showAtomText = () => {
-  const atoms = blackbox.atoms;
-  atoms.forEach((coord) => {
-    const [row, col] = coord.split(",");
-    const cell = document.querySelector(`.cell[row="${row}"][col="${col}"]`);
-    const spanElement = document.createElement("span");
-    spanElement.className = "atom-text";
-    spanElement.textContent = "A";
-    cell.appendChild(spanElement);
-  });
-};
-
 const hideAtomText = () => {
   const cells = document.querySelectorAll(".cell");
   cells.forEach((cell) => {
     const atomText = cell.querySelector(".atom-text");
+    const correctGuessText = cell.querySelector(".correct-guess-text");
+    const wrongGuessText = cell.querySelector(".wrong-guess-text");
     if (atomText) {
       cell.removeChild(atomText);
     }
+    if (correctGuessText) {
+      cell.removeChild(correctGuessText);
+    }
+    if (wrongGuessText) {
+      cell.removeChild(wrongGuessText);
+    }
   });
+};
+
+const onClickLaunchPoint = (e) => {
+  // A callback function for clicking on a launch point.
+  // Shoot a ray from the launch point and then update score.
+  const launchPointEvents = new LaunchPointEvents(blackboxInstance);
+  const exitPoint = launchPointEvents.onClickLaunchPoint(e);
+  renderScore();
+
+  // Remove the event listner for the pair.
+  e.target.removeEventListener("click", onClickLaunchPoint);
+  if (exitPoint) {
+    exitPoint.removeEventListener("click", onClickLaunchPoint);
+  }
+};
+
+const onClickCell = (e) => {
+  // A callback function for clicking on a cell.
+  // Check if the cell is an atom and then update the score.
+  const cellEvents = new CellEvents(blackboxInstance);
+  const cell = cellEvents.onClickCell(e);
+  renderScore();
+
+  // Checks if all atoms are found.
+  const blackbox = blackboxInstance.getInstance();
+  if (
+    cellEvents.checkAllAtomsDiscovered() === true &&
+    !blackbox.foundAllAtoms
+  ) {
+    blackbox.foundAllAtoms = true;
+    setTimeout(() => {
+      displayCongratulation();
+    }, 0); // Place alerts at the end of the event queue.
+  }
+  cell.removeEventListener("click", onClickCell);
+};
+
+const displayCongratulation = () => {
+  // Display a congratulation message when all atoms are found.
+  alert("Congratulations! You have discovered all atoms.");
+
+  // Start a new blackbox game.
+  const confirmed = window.confirm("Do you want to start a new game?");
+  if (!confirmed) {
+    return;
+  }
+  blackboxInstance.resetInstance();
+  resetBoard();
 };
 
 const addEventListenerToLanchPoints = () => {
@@ -172,6 +180,7 @@ const addEventListenerToLanchPoints = () => {
     point.addEventListener("click", onClickLaunchPoint);
   });
 };
+
 const addEventListenerToCells = () => {
   // Add event listeners to cells
   const cells = document.querySelectorAll(".cell");
@@ -179,25 +188,16 @@ const addEventListenerToCells = () => {
     cell.addEventListener("click", onClickCell);
   });
 };
+
+const addButtonEvent = (buttonId, onClickEvent) => {
+  // Add an event listener to a button
+  const button = document.getElementById(buttonId);
+  button.addEventListener("click", onClickEvent);
+};
+
 addEventListenerToLanchPoints();
 addEventListenerToCells();
-
-const newButton = document.getElementById("new-btn");
-newButton.addEventListener("click", onClickNew);
-const resetButton = document.getElementById("reset-btn");
-resetButton.addEventListener("click", onClickReset);
-const showButton = document.getElementById("show-btn");
-showButton.addEventListener("click", onClickShow);
+addButtonEvent("new-btn", onClickNew);
+addButtonEvent("reset-btn", onClickReset);
+addButtonEvent("show-btn", onClickShow);
 renderScore();
-
-// Testing functions
-const hideRay = (debugMode) => {
-  // Display ray on the board
-  if (!debugMode) {
-    return;
-  }
-  const cells = document.querySelectorAll(".cell");
-  cells.forEach((cell) => {
-    cell.style.backgroundColor = "#bbb";
-  });
-};

@@ -2,8 +2,6 @@
 // take start launch point and grid data from a blackbox object
 // move ray, check collision, return the result and end point of the ray
 
-const DEBUG_MODE = true;
-
 const directions = {
   toTop: [-1, 0],
   toBottom: [1, 0],
@@ -151,19 +149,6 @@ class Ray {
     [this._dx, this._dy] = directions[newDirection];
   }
 
-  showRay(debugMode) {
-    // Show ray on the board for debugging.
-    if (!debugMode) {
-      return;
-    }
-    let cell = document.querySelector(
-      `.cell[row="${this._row}"][col="${this._col}"]`
-    );
-    if (cell) {
-      cell.style.backgroundColor = "green";
-    }
-  }
-
   moveRay() {
     // initial checkup
     if (this.checkAtomFront()) {
@@ -174,8 +159,6 @@ class Ray {
     }
     this._row += this._dx;
     this._col += this._dy;
-
-    this.showRay(DEBUG_MODE);
 
     while (
       this._row >= 0 &&
@@ -189,8 +172,6 @@ class Ray {
       this.setNextDirection();
       this._row += this._dx;
       this._col += this._dy;
-
-      this.showRay(DEBUG_MODE);
     }
 
     if (this._col === this._entryCol && this._row === this._entryRow) {
